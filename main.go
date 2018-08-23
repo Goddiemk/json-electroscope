@@ -15,9 +15,9 @@ func main() {
 	defer db.Close()
 	InitStore(&dbStore{db: db})
 
-	//getdistrict()
-	//getpopulation()
-	//gettown()
+	getdistrict()
+	getpopulation()
+	gettown()
 
 	handler := http.NewServeMux()
 	handler.Handle("/districts/", DistrictHandler{})
