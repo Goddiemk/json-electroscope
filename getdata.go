@@ -52,7 +52,7 @@ func getpopulation() {
 	for k, v := range populationByCodes {
 		getpop.LocationCode = k
 		getpop.Population = strconv.Itoa(v)
-		err := store.StorePop(&getpop)
+		err := dm.StorePop(&getpop)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -74,7 +74,7 @@ func getdistrict() {
 	for k, v := range districtcodeByNames {
 		getdis.Names.EnglishName = k
 		getdis.Code = v
-		err := store.StoreDis(&getdis)
+		err := dm.StoreDis(&getdis)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -107,7 +107,7 @@ func gettown() {
 			}
 
 		}
-		err := store.StoreTown(&gettown)
+		err := dm.StoreTown(&gettown)
 		if err != nil {
 			fmt.Println(err)
 		}

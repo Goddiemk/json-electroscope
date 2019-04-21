@@ -3,15 +3,19 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/kelseyhightower/envconfig"
 	"log"
 	"net/http"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 )
 
 var (
-	appname = "electroscope"
-	config  Config
+	db     *sql.DB
+	config Config
+	dm     *DBManager
+	err    error
 )
 
 type Config struct {
@@ -19,20 +23,25 @@ type Config struct {
 	Port     string
 }
 
+func init() {
+	if err = godotenv.Load("system.env"); err != nil {
+		fmt.Println(err.Error())
+	}
+
+	err := envconfig.Process("", &config)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	db, err = sql.Open("mysql", config.MysqlURI)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	dm = NewDBManager()
+}
+
 func main() {
-
-	err := envconfig.Process(appname, &config)
-	if err != nil {
-		fmt.Errorf(err.Error())
-	}
-
-	db, err := sql.Open("mysql", config.MysqlURI)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer db.Close()
-
-	InitStore(&dbStore{db: db})
 
 	getdistrict()
 	getpopulation()
