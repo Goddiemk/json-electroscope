@@ -26,6 +26,14 @@
   version = "v1.3.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:fc2388d916c78050607047d54c65715bdf6a83b4ff5434eeeb71c362192ffec4"
+  name = "github.com/trhura/simplecli"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "8d474db9c93f79150a4d19655f2ac1a67c2763e1"
+
+[[projects]]
   digest = "1:c25289f43ac4a68d88b02245742347c94f1e108c534dda442188015ff80669b3"
   name = "google.golang.org/appengine"
   packages = ["cloudsql"]
@@ -39,7 +47,8 @@
   input-imports = [
     "github.com/go-sql-driver/mysql",
     "github.com/joho/godotenv",
-    "github.com/kelseyhightower/envconfig"
+    "github.com/kelseyhightower/envconfig",
+    "github.com/trhura/simplecli",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

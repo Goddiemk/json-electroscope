@@ -1,55 +1,51 @@
 package main
 
 import (
-	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/joho/godotenv"
-	"github.com/kelseyhightower/envconfig"
+	"minkhantkoko/json-electroscope/lib"
 )
 
-var (
-	db     *sql.DB
-	config Config
-	dm     *DBManager
-	err    error
-)
+var environ = lib.GetEnvironment()
+var client = lib.GetDatabase()
 
-type Config struct {
-	MysqlURI string
-	Port     string
+func main() {
+	http.HandleFunc("/districts/", districtHandler)
+	http.HandleFunc("/townships/", townshipHandler)
+	log.Fatal(http.ListenAndServe(environ.Port, nil))
 }
 
-func init() {
-	if err = godotenv.Load("system.env"); err != nil {
-		fmt.Println(err.Error())
-	}
+func districtHandler(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Path[11:]
 
-	err := envconfig.Process("", &config)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+	districtMap := make(map[string]interface{})
+	districtMap["district_code"] = client.GetDistrictCode(name)
+	districtMap["town_codes"] = client.GetTownshipCodes(client.GetDistrictCode(name))
+	districtMap["townships"] = client.GetTownshipNames(client.GetDistrictCode(name))
+	districtMap["population"] = client.GetPopulation(client.GetDistrictCode(name))
+	districtJSON, err := json.Marshal(districtMap)
 
-	db, err = sql.Open("mysql", config.MysqlURI)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	dm = NewDBManager()
+	fmt.Fprintf(w, "%s", districtJSON)
 }
 
-func main() {
+func townshipHandler(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Path[11:]
 
-	getdistrict()
-	getpopulation()
-	gettown()
+	townshipMap := make(map[string]interface{})
+	townshipMap["town_code"] = client.GetTownCodeByTownName(name)
+	townshipMap["district_code"] = client.GetDistrictCodeByTownName(name)
+	townshipMap["population"] = client.GetPopulation(client.GetTownCodeByTownName(name))
+	townshipJSON, err := json.Marshal(townshipMap)
+	if err != nil {
+		fmt.Println(err)
+	}
 
-	handler := http.NewServeMux()
-	handler.Handle("/districts/", DistrictHandler{})
-	handler.Handle("/townships/", TownshipHandler{})
-	log.Fatal(http.ListenAndServe(config.Port, handler))
-
+	fmt.Fprintf(w, "%s", townshipJSON)
 }

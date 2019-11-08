@@ -6,45 +6,33 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+
+	"minkhantkoko/json-electroscope/lib"
+
+	"github.com/trhura/simplecli"
 )
 
-type DistrictNames struct {
-	EnglishName string `json:"en"`
+type CmdOperations struct{}
+
+func (c CmdOperations) Create() {
+	db := lib.GetDatabase()
+	db.CreateTables()
 }
 
-type Districts struct {
-	Code  string        `json:"code"`
-	Names DistrictNames `json:"name"`
-}
+func (c CmdOperations) Seed() {
+	var districtcodeByNames = make(map[string]string)
+	var populationByCodes = make(map[string]int)
+	var townshipCodeByNames = make(map[string]string)
+	var districtCodeByTowncode = make(map[string]string)
 
-type TownshipNames struct {
-	EnglishName string `json:"en"`
-}
-
-type Townships struct {
-	Code         string        `json:"code"`
-	DistrictCode string        `json:"dt_code"`
-	Names        TownshipNames `json:"name"`
-}
-
-type Population struct {
-	LocationCode string `json:"location_code"`
-	Population   string `json:"population"`
-}
-
-var districtcodeByNames = make(map[string]string, 0)
-var populationByCodes = make(map[string]int, 0)
-var townshipCodeByNames = make(map[string]string, 0)
-var districtCodeByTowncode = make(map[string]string, 0)
-
-func getpopulation() {
-	getpop := Population{}
+	var db = lib.GetDatabase()
+	getpop := lib.Population{}
 	response, _ := http.Get(
 		"https://raw.githubusercontent.com/Electroscope/electroscope-api/master/mongo/population.json",
 	)
 	populationData, _ := ioutil.ReadAll(response.Body)
 
-	var populations []Population
+	var populations []lib.Population
 	json.Unmarshal(populationData, &populations)
 	for _, population := range populations {
 		populationByCodes[population.LocationCode], _ = strconv.Atoi(population.Population)
@@ -52,21 +40,19 @@ func getpopulation() {
 	for k, v := range populationByCodes {
 		getpop.LocationCode = k
 		getpop.Population = strconv.Itoa(v)
-		err := dm.StorePop(&getpop)
+		err := db.StorePop(&getpop)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
-}
 
-func getdistrict() {
-	getdis := Districts{}
-	response, _ := http.Get(
+	getdis := lib.Districts{}
+	response, _ = http.Get(
 		"https://raw.githubusercontent.com/Electroscope/electroscope-api/master/mongo/districts.json",
 	)
 	districtsData, _ := ioutil.ReadAll(response.Body)
 
-	var districts []Districts
+	var districts []lib.Districts
 	json.Unmarshal(districtsData, &districts)
 	for _, district := range districts {
 		districtcodeByNames[district.Names.EnglishName] = district.Code
@@ -74,19 +60,17 @@ func getdistrict() {
 	for k, v := range districtcodeByNames {
 		getdis.Names.EnglishName = k
 		getdis.Code = v
-		err := dm.StoreDis(&getdis)
+		err := db.StoreDis(&getdis)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
-}
 
-func gettown() {
-	gettown := Townships{}
-	response, _ := http.Get("https://raw.githubusercontent.com/Electroscope/electroscope-api/master/mongo/townships.json")
+	gettown := lib.Townships{}
+	response, _ = http.Get("https://raw.githubusercontent.com/Electroscope/electroscope-api/master/mongo/townships.json")
 	townshipsData, _ := ioutil.ReadAll(response.Body)
 
-	var townships []Townships
+	var townships []lib.Townships
 	json.Unmarshal(townshipsData, &townships)
 
 	for _, town := range townships {
@@ -107,10 +91,13 @@ func gettown() {
 			}
 
 		}
-		err := dm.StoreTown(&gettown)
+		err := db.StoreTown(&gettown)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
+}
 
+func main() {
+	simplecli.Handle(&CmdOperations{})
 }
